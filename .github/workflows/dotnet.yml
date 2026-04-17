@@ -1,0 +1,61 @@
+name: .NET
+
+on: [push]
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v0.1.13
+        with:
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+  build:
+    name: Build Release
+    needs: create_release
+    strategy:
+      matrix:
+        kind: ['linux', 'windows', 'macOS']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+            what: WoWArchiveCompare.cs
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+            what: WoWArchiveCompare.cs
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
+            what: WoWArchiveCompare.cs
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 10.0.x
+    - name: Restore dependencies
+      run: dotnet restore ${{ matrix.what }}
+    - name: Build
+      run: dotnet publish -c Release -r ${{ matrix.target }} -p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=link --self-contained false -f net10.0 ${{ matrix.what }}
+    - name: Test
+      run: dotnet test --no-build --verbosity normal ${{ matrix.what }}
+    - name: Archive Release
+      uses: thedoctor0/zip-release@main
+      with:
+        directory: ${{ github.workspace }}/artifacts/WoWArchiveCompare
+        type: 'zip'
+        filename: ${{ github.workspace }}/Release-${{ matrix.target }}.zip
+    - name: Release
+      uses: softprops/action-gh-release@v0.1.13
+      with:
+        files: ${{ github.workspace }}/Release-${{ matrix.target }}.zip
