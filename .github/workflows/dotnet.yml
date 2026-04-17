@@ -15,7 +15,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          TAG="Release-${github_sha_hash:0:6}-naot"
+          TAG="Release-${github.sha:0:6}-naot"
           echo "$TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           git tag -a $TAG -m "Published version $TAG" ${GITHUB_SHA}
@@ -28,7 +28,7 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: false
-          tag_name: "Release-${github_sha_hash:0:6}-naot"
+          tag_name: "Release-${github.sha:0:6}-naot"
   build:
     name: Build Release
     needs: create_release
@@ -71,4 +71,4 @@ jobs:
       uses: softprops/action-gh-release@v0.1.13
       with:
         files: ${{ github.workspace }}/Release-${{ matrix.target }}.zip
-        tag_name: "Release-${github_sha_hash:0:6}-naot"
+        tag_name: "Release-${github.sha:0:6}-naot"
