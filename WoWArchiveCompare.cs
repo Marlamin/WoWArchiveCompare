@@ -6,8 +6,8 @@ if (args.Length != 4)
     return;
 }
 
-var sourceEntries = LoadEntries(args[0]);
-var otherEntries = LoadEntries(args[1]);
+var otherEntries = LoadEntries(args[0]);
+var sourceEntries = LoadEntries(args[1]);
 var otherName = args[2];
 var outputFolder = args[3];
 
