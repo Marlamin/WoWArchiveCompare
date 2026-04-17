@@ -13,6 +13,8 @@ jobs:
       - name: Tag the repository
         id: tag
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
           TAG=v$(date -Iseconds | sed 's/[T:\+]/-/g')
           echo "$TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
