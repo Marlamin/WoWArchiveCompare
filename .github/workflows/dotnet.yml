@@ -71,3 +71,4 @@ jobs:
       uses: softprops/action-gh-release@v0.1.13
       with:
         files: ${{ github.workspace }}/Release-${{ matrix.target }}.zip
+        tag_name: ${{ steps.tag.outputs.tag }}
