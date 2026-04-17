@@ -28,7 +28,7 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: false
-          tag_name: ${{ github.sha }}
+          tag_name: "Release-${github_sha_hash:0:6}-naot"
   build:
     name: Build Release
     needs: create_release
@@ -71,4 +71,4 @@ jobs:
       uses: softprops/action-gh-release@v0.1.13
       with:
         files: ${{ github.workspace }}/Release-${{ matrix.target }}.zip
-        tag_name: ${{ github.sha }}
+        tag_name: "Release-${github_sha_hash:0:6}-naot"
