@@ -2,28 +2,28 @@ using System.Text;
 
 if (args.Length != 4)
 {
-    Console.WriteLine("Usage: WoWArchiveCompare <file1.tsv> <file2.tsv> <2nd name> <reportFolder>");
+    Console.WriteLine("Usage: WoWArchiveCompare <sourceFile.tsv> <otherFile.tsv> <other name> <reportFolder>");
     return;
 }
 
-var file1Entries = LoadEntries(args[0]);
-var file2Entries = LoadEntries(args[1]);
+var sourceEntries = LoadEntries(args[0]);
+var otherEntries = LoadEntries(args[1]);
 var otherName = args[2];
 var outputFolder = args[3];
 
 var hashMismatches = new List<Mismatch>();
 var sizeMismatches = new List<Mismatch>();
-var missingInFile2 = new List<Mismatch>();
-var missingInFile1 = new List<Mismatch>();
+var missingInOther = new List<Mismatch>();
+var missingInSource = new List<Mismatch>();
 var matches = new List<Mismatch>();
 
 // Check file1 against file2
-foreach (var kvp in file1Entries)
+foreach (var kvp in sourceEntries)
 {
     var path = kvp.Key;
     var entry1 = kvp.Value;
 
-    if (file2Entries.TryGetValue(path, out var entry2))
+    if (otherEntries.TryGetValue(path, out var entry2))
     {
         bool hashEqual = entry1.Md5.Equals(entry2.Md5, StringComparison.OrdinalIgnoreCase);
         bool sizeEqual = entry1.Size == entry2.Size;
@@ -41,20 +41,20 @@ foreach (var kvp in file1Entries)
     }
     else
     {
-        missingInFile2.Add(new Mismatch { Path = path, Entry1 = entry1 });
+        missingInOther.Add(new Mismatch { Path = path, Entry1 = entry1 });
     }
 }
 
 // Check file2 against file1
-foreach (var kvp in file2Entries)
+foreach (var kvp in otherEntries)
 {
-    if (!file1Entries.ContainsKey(kvp.Key))
+    if (!sourceEntries.ContainsKey(kvp.Key))
     {
-        missingInFile1.Add(new Mismatch { Path = kvp.Key, Entry2 = kvp.Value });
+        missingInSource.Add(new Mismatch { Path = kvp.Key, Entry2 = kvp.Value });
     }
 }
 
-string html = GenerateHtmlReport(matches, hashMismatches, sizeMismatches, missingInFile1, missingInFile2);
+string html = GenerateHtmlReport(matches, hashMismatches, sizeMismatches, missingInSource, missingInOther);
 File.WriteAllText(Path.Combine(outputFolder, $"report_{otherName.ToLower()}.html"), html);
 
 Console.WriteLine("Comparison complete.");
@@ -94,8 +94,8 @@ string GenerateHtmlReport(
     List<Mismatch> matches,
     List<Mismatch> hashMismatches,
     List<Mismatch> sizeMismatches,
-    List<Mismatch> missingInFile1,
-    List<Mismatch> missingInFile2)
+    List<Mismatch> missingInSource,
+    List<Mismatch> missingInOther)
 {
     var sb = new StringBuilder();
 
@@ -119,8 +119,8 @@ string GenerateHtmlReport(
     //WriteTable(sb, "✅ Matches", matches, "match", openByDefault: false);
     WriteTable(sb, "❌ Hash Mismatches", hashMismatches, "mismatch");
     WriteTable(sb, "⚠️ Size Mismatches", sizeMismatches, "warning");
-    WriteTable(sb, $"🚫 Missing in {otherName}", missingInFile1, "missing");
-    WriteTable(sb, "🚫 Missing in source", missingInFile2, "missing");
+    WriteTable(sb, $"🚫 Missing in {otherName}", missingInSource, "missing");
+    WriteTable(sb, "🚫 Missing in source", missingInOther, "missing");
 
     sb.AppendLine("</body></html>");
     return sb.ToString();
@@ -140,7 +140,7 @@ void WriteTable(StringBuilder sb, string title, List<Mismatch> items, string css
     }
 
     sb.AppendLine("<table>");
-    sb.AppendLine($"<tr><th>Path</th><th>{otherName} Size</th><th>Wago Size</th><th>{otherName} MD5</th><th>Wago MD5</th></tr>");
+    sb.AppendLine($"<tr><th>Path</th><th>{otherName} Size</th><th>Source Size</th><th>{otherName} MD5</th><th>Source MD5</th></tr>");
 
     foreach (var item in items)
     {
