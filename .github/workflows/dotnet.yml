@@ -1,6 +1,11 @@
 name: .NET
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    paths:
+      -  WoWArchiveCompare.cs
 
 jobs:
   create_release:
