@@ -1,14 +1,15 @@
 using System.Text;
 
-if (args.Length != 3)
+if (args.Length != 4)
 {
-    Console.WriteLine("Usage: ConsoleApp1 <file1.tsv> <file2.tsv> <2nd name>");
+    Console.WriteLine("Usage: WoWArchiveCompare <file1.tsv> <file2.tsv> <2nd name> <reportFolder>");
     return;
 }
 
 var file1Entries = LoadEntries(args[0]);
 var file2Entries = LoadEntries(args[1]);
 var otherName = args[2];
+var outputFolder = args[3];
 
 var hashMismatches = new List<Mismatch>();
 var sizeMismatches = new List<Mismatch>();
@@ -54,7 +55,7 @@ foreach (var kvp in file2Entries)
 }
 
 string html = GenerateHtmlReport(matches, hashMismatches, sizeMismatches, missingInFile1, missingInFile2);
-File.WriteAllText($"/storage/casc/report_{otherName.ToLower()}.html", html);
+File.WriteAllText(Path.Combine(outputFolder, $"report_{otherName.ToLower()}.html"), html);
 
 Console.WriteLine("Comparison complete.");
 
@@ -64,22 +65,19 @@ static Dictionary<string, FileEntry> LoadEntries(string filePath)
 
     foreach (var line in File.ReadLines(filePath))
     {
-        //if (line.Contains("/wow/patch/", StringComparison.OrdinalIgnoreCase))
-        //    continue;
-        //if (line.Contains("/wow/config/", StringComparison.OrdinalIgnoreCase))
-        //    continue;
         if (string.IsNullOrWhiteSpace(line)) continue;
 
         var parts = line.Split('\t');
-        if (parts.Length != 3) continue;
+        if (parts.Length != 3)
+        {
+            Console.WriteLine("Warning, line does not have 3 parts: " + line);
+            continue;
+        }
 
         string path = parts[0];
         if (!long.TryParse(parts[1], out long size)) continue;
 
         string md5 = parts[2];
-
-        if (md5 == "d41d8cd98f00b204e9800998ecf8427e" || md5 == "998368d7c95ea4293237f2320546e440")
-            continue;
 
         entries[path] = new FileEntry
         {
@@ -122,7 +120,7 @@ string GenerateHtmlReport(
     WriteTable(sb, "❌ Hash Mismatches", hashMismatches, "mismatch");
     WriteTable(sb, "⚠️ Size Mismatches", sizeMismatches, "warning");
     WriteTable(sb, $"🚫 Missing in {otherName}", missingInFile1, "missing");
-    WriteTable(sb, "🚫 Missing in Wago", missingInFile2, "missing");
+    WriteTable(sb, "🚫 Missing in source", missingInFile2, "missing");
 
     sb.AppendLine("</body></html>");
     return sb.ToString();
